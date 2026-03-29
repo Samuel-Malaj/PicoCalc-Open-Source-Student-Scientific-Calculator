@@ -100,8 +100,3 @@ def calculate(expression):
     expression = get_compressed_AddSub(expression)
 
     return expression
-
-
-expression = ['2', '+', '5', 'x', '5', '2', '+', '2', '6', 'x', '2']
-answer = calculate(expression)
-print(answer)
