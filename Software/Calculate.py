@@ -1,16 +1,15 @@
 import math
-import time
 
 sci_operators = ['sin(', 'cos(', 'tan(']
 
-def is_float(char): # checks if string is a number
+def is_float(char):
     try:
         float(char)
         return True
     except (ValueError, TypeError):
         return False
 
-def join_nums(text): # joins all the stringed numbers in a list together if they are next to each other
+def join_nums(text):
     end = False
     counter = 0
 
@@ -42,8 +41,6 @@ def compress_sci_operators(expression): # goes through expression and carries ou
                 
                 while len(sin_nums) > 1:
                     sin_nums = [calculate(sin_nums)]
-
-                print('sin_nums: ', sin_nums)
                 sin_nums = join_nums(sin_nums)[0]
                 
                 if is_float(sin_nums):
@@ -61,7 +58,10 @@ def compress_sci_operators(expression): # goes through expression and carries ou
         if char == 'cos(':
             try:
                 cos_nums = expression[expression.index('cos(') + 1: expression.index(')')]
-                cos_nums = calculate(cos_nums)
+
+                while len(cos_nums) > 1:
+                    cos_nums = [calculate(cos_nums)]
+                cos_nums = join_nums(cos_nums)[0]
                 
                 if is_float(cos_nums):
                     cos_nums = math.radians(float(''.join(cos_nums)))
@@ -78,7 +78,10 @@ def compress_sci_operators(expression): # goes through expression and carries ou
         if char == 'tan(':
             try:
                 tan_nums = expression[expression.index('tan(') + 1: expression.index(')')]
-                tan_nums = calculate(tan_nums)
+
+                while len(tan_nums) > 1:
+                    tan_nums = [calculate(tan_nums)]
+                tan_nums = join_nums(tan_nums)[0]
                 
                 if is_float(tan_nums):
                     tan_nums = math.radians(float(''.join(tan_nums)))
@@ -91,6 +94,20 @@ def compress_sci_operators(expression): # goes through expression and carries ou
             except Exception as e:
                 return ['syntax error']
 
+def compress_indeces(expression):
+    expression = join_nums(expression)
+    for char in expression:
+        if char == '^':
+            try:
+                num1 = float(expression[expression.index(char)-1])
+                num2 = float(expression[expression.index(char) + 1])
+                compressed_value = num1 ** num2
+                expression[expression.index(char)-1: expression.index(char)+2] = str(compressed_value)
+
+                return expression
+
+            except:
+                print('Syntax Error')
 
 def compress_MultiplyDivide(expression): # goes through expression and does all multiplication and division
     expression = join_nums(expression)
@@ -105,7 +122,8 @@ def compress_MultiplyDivide(expression): # goes through expression and does all 
                 return expression
 
             except:
-                return ['syntax error']
+                return ['Syntax Error']
+
         if char == '/':
             try:
                 num1 = float(expression[expression.index(char)-1])
@@ -116,12 +134,11 @@ def compress_MultiplyDivide(expression): # goes through expression and does all 
                 return expression
 
             except:
-                return ['syntax error']
+                return ['Syntax Error']
 
-def compress_AddSub(expression): # goes though expression and does all addition and subtraction
-    expression = join_nums(expression)
+def compress_AddSub(expression):
+    expression = join_nums(expression) # goes though expression and does all addition and subtraction
     for char in expression:
-        print('--->', expression, char)
         if char == '+':
             try:
                 num1 = float(expression[expression.index(char)-1])
@@ -139,7 +156,6 @@ def compress_AddSub(expression): # goes though expression and does all addition 
                 num1 = float(expression[expression.index(char)-1])
                 num2 = float(expression[expression.index(char)+1])
                 compressed_value = num1 - num2
-                print('---->', compressed_value)
                 expression[expression.index(char)-1: expression.index(char)+2] = [str(compressed_value)]
 
                 return expression
@@ -150,11 +166,16 @@ def compress_AddSub(expression): # goes though expression and does all addition 
         
 ###############################################################################################################
 
-## funcctions do all calculations in expression until none remain
-def get_compressed_sci(expression): 
+''' funcctions do all calculations in expression until none remain '''
+def get_compressed_sci(expression):
     for i in sci_operators:
         while i in expression: 
             expression = compress_sci_operators(expression)
+    return expression
+
+def get_compressed_indeces(expression):
+    while '^' in expression:
+        expression = compress_indeces(expression)
     return expression
 
 def get_compressed_MultiplyDivide(expression):
@@ -167,17 +188,15 @@ def get_compressed_AddSub(expression):
         expression = compress_AddSub(expression)
     return expression
 
-
-def calculate(expression): #main function: compiles all other functions in order of BIDMAS
+def calculate(expression): #compresses all functions into one in BIDMAS order 
     expression = get_compressed_sci(expression)
-    print(expression)
+    expression = get_compressed_indeces(expression)
     expression = get_compressed_MultiplyDivide(expression)
-    print(expression)
     expression = get_compressed_AddSub(expression)
-    print(expression)
     expression = ''.join(expression)
     return expression
 
-expression = ['sin(', '3', '3', '.', '5', '/', '0', '.', '5', ')', 'x', 'tan(', '5', '0', ')', '+', '2'] # example expression
-answer = calculate(expression)
-print(answer)
+''' calculation example '''
+expression = ['8', '-', '2', 'x', 'sin(', '4', '3', '.', '5', '/', '2', ')']
+expression = calculate(expression)
+print(expression)
