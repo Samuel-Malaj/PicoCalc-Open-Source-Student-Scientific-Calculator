@@ -1,6 +1,6 @@
 import math
 import time
-import decimal
+
 
 sci_operators = ['sin(', 'cos(', 'tan(']
 
@@ -143,9 +143,9 @@ def compress_indeces(expression):
             try:
                 num1 = float(expression[expression.index(char)-1])
                 num2 = float(expression[expression.index(char) + 1])
-                compressed_value = str(float(decimal.Decimal(num1 ** num2)))
+                compressed_value = str(float((num1 ** num2)))
 
-                expression[expression.index(char)-1: expression.index(char)+2] = str(compressed_value)
+                expression[expression.index(char)-1: expression.index(char)+2] = [str(compressed_value)]
 
 
                 return expression
@@ -166,6 +166,7 @@ def compress_MultiplyDivide(expression): # goes through expression and does all 
                 return expression
 
             except Exception as e:
+                print('error')
                 return get_error(expression, e)
 
         if char == '/':
@@ -234,11 +235,15 @@ def get_compressed_indeces(expression):
 
 def get_compressed_MultiplyDivide(expression):
     while 'x' in expression or '/' in expression:
+        if expression[0] == 'x' or expression[0] == '/':
+            return 'Syntax Error'
         expression = compress_MultiplyDivide(expression)
     return expression
 
 def get_compressed_AddSub(expression):
     while '+' in expression or ('-' in expression and expression.index('-') > 0):
+        if expression[0] == '+':
+            return 'Syntax Error'
         expression = compress_AddSub(expression)
     return expression
 
@@ -253,21 +258,21 @@ def calculate(expression): #compresses all functions into one in BIDMAS order
         return 'Syntax Error'
     return expression
 
-''' example calculations '''
-expression = ['(', '8', '-', '2', 'x', 'sin(', '4', '3', '.', '5', '/', '2', ')', ')', '^', '2'] # output = '52.69141325766067'
-print(calculate(expression))
-
-expression = ['9', '^', '9', '9', '9', '9', 'sin('] # output = 'Syntax Error'
-print(calculate(expression))
-
-expression = ['tan(', '9', '0', ')'] # output = '1.633123935319537e+16'
-print(calculate(expression))
-
-expression = ['21.75']# output = '21.75'
-print(calculate(expression))
-
-expression = ['sin(', '3', '0', ')', '^', '2', '+', 'cos(', '3', '0', ')', '^', '2'] # output = '1'
-print(calculate(expression))
-
-expression = ['999', '^', '99999999'] # output = 'Math Error'
-print(calculate(expression))
+# ''' example calculations '''
+# expression = ['(', '8', '-', '2', 'x', 'sin(', '4', '3', '.', '5', '/', '2', ')', ')', '^', '2'] # output = '52.69141325766067'
+# print(calculate(expression))
+# 
+# expression = ['9', '^', '9', '9', '9', '9', 'sin('] # output = 'Syntax Error'
+# print(calculate(expression))
+# 
+# expression = ['tan(', '9', '0', ')'] # output = '1.633123935319537e+16'
+# print(calculate(expression))
+# 
+# expression = ['21.75']# output = '21.75'
+# print(calculate(expression))
+# 
+# expression = ['sin(', '3', '0', ')', '^', '2', '+', 'cos(', '3', '0', ')', '^', '2'] # output = '1'
+# print(calculate(expression))
+# 
+# expression = ['999', '^', '99999999'] # output = 'inf'
+# print(calculate(expression))
