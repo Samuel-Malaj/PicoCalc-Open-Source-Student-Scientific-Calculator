@@ -1,7 +1,6 @@
 import math
 import time
 
-
 sci_operators = ['sin(', 'cos(', 'tan(']
 
 def is_float(char):
@@ -276,3 +275,4 @@ def calculate(expression): #compresses all functions into one in BIDMAS order
 # 
 # expression = ['999', '^', '99999999'] # output = 'inf'
 # print(calculate(expression))
+      
