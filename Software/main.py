@@ -2,6 +2,8 @@ from machine import Pin
 import time
 from Calculate import calculate
 import network
+import uasyncio as asyncio
+import socket
 
 LED = Pin('LED', Pin.OUT)
 LED.value(1)
@@ -26,7 +28,7 @@ columns = [C1, C2, C3, C4, C5, C6]
 
 FUNCTIONS = ['POWER', 'ANS', 'DEL', 'AC', 'MODE', 'EXE', 'SHIFT']
 
-calculator_array = [['POWER', '#', '#', '#', '#', '#'],
+calculator_array = [['POWER', 'SHIFT', '#', '#', '#', '#'],
                   ['#', '/', '#', '^', '^', '#'],
                   ['ANS', 'sin(', 'cos(', 'tan(', '(', ')'],
                   ['7', '8', '9', 'DEL', 'AC'],
@@ -40,7 +42,7 @@ character_array = [['POWER', 'SHIFT', '#', '#', '#', '#'],
                    ['M', 'N', 'O', 'DEL', 'AC'],
                    ['P', 'Q', 'R', 'S', 'T'],
                    ['U', 'V', 'W', 'X', 'Y'],
-                   ['Z', ' ', '#', '#', 'EXE']]
+                   ['Z', ' ', '#', 'MODE', 'EXE']]
 
 shift_character_array = [['POWER', '#', '#', '#', '#', '#'],
                    ['#', '#', '#', '#', '#', '#'],
@@ -48,7 +50,7 @@ shift_character_array = [['POWER', '#', '#', '#', '#', '#'],
                    ['7', '8', '9', 'DEL', 'AC'],
                    ['4', '5', '6', '<', '>'],
                    ['1', '2', '3', 'X', 'Y'],
-                   ['0', '.', '#', '#', 'EXE']]
+                   ['0', '.', '#', 'MODE', 'EXE']]
 
 expression = []
 ANS = 0
@@ -66,117 +68,113 @@ def listen():
                     return col_num, row_num
             row.value(0)
         time.sleep_ms(10)
+        
+def get_expression(array, shift_array, ANS):
+    expression = []
+    shift = False
+    while True:
+        x, y = listen()
+        if shift:
+            button = shift_array[y][x]
+            shift = False
+        else:
+            button = array[y][x]
+            
+        if button in FUNCTIONS:
+            if button == 'DEL' and len(expression) > 0:
+                expression.pop()
+            if button == 'AC':
+                expression = []
+            if button == 'MODE':
+                return 'MODE', expression
+            if button == 'EXE':
+                return 'EXE', expression
+            if button == 'SHIFT':
+                shift = True
+            if button == 'ANS':
+                expression.append(ANS)
+        else:
+            expression.append(button)
+        print(expression)
 
 def calculator(expression):
     ANS = 0
     while True:
-        x, y = listen()
-        button = calculator_array[y][x]
-        
-        if button in FUNCTIONS:
-            if button == 'EXE':
-                ANS = calculate(expression)
-                expression = [ANS]
-                print(ANS)          
-            if button == 'ANS':
-                if ANS:
-                    expression.append(ANS)          
-            if button == 'AC':
-                expression = []              
-            if button == 'DEL':
-                if len(expression) >= 1:
-                    expression.pop()                  
-            if button == 'MODE':
-                return ''
-        
-        else:
-            expression.append(button)
-        
-        print(expression)
+        function, expression = get_expression(calculator_array, character_array, ANS)
+        if function == 'EXE':
+            ANS = calculate(expression)
+            print(ANS)
+        if function == 'MODE':
+            return ''
         
 def characters(expression):
-    shift = False
     while True:
-        x, y = listen()
-        if shift:
-            button = shift_character_array[y][x]
-            shift = False
-        else:
-            button = character_array[y][x]
-        
-        if button in FUNCTIONS:
-            if button == 'SHIFT':
-                shift = True
-            if button == 'DEL':
-                if len(expression) > 0: 
-                    expression.pop()
-            
-            if button == 'AC':
-                expression = []
-                             
-            if button == 'MODE':
-                return ''
-        
-        else:
-            expression.append(button)
-        
-        print(expression)
+        function, expression = get_expression(character_array, shift_character_array, 0)
+        if function == 'EXE':
+            pass # send_message(expression)
+        if function == 'MODE':
+            return ''
         
 def wifi():
-    shift = False
-    expression = []
-    scan()
-    while True:
-        x, y = listen()
-        if shift:
-            button = shift_character_array[y][x]
-            shift = False
-        else:
-            button = character_array[y][x]
-        
-        if button in FUNCTIONS:
-            if button == 'DEL':
-                if len(expression) > 0:
-                    expression.pop()
+    networks = scan()
+    counter = 0
+    function, expression = get_expression(character_array, shift_character_array, 0)
                     
-            if button == 'MODE':
-                return ''
+    if function == 'MODE':
+        return ''
                 
-            if button == 'EXE':
-                try:
-                    num = int(''.join(expression))
+    if function == 'EXE':
+        if counter == 0: # if user hasn't been asked to select network yet
+            try:
+                num = int(''.join(expression))
+                if num == 0:
+                    print('SELECTED 0 CREATE NEW <--------')
+                    ssid = 'Create New +'
+                else:
                     ssid = networks[num-1][0].decode('utf-8')
                     print('Selected:', ssid)
-                    print('Enter Password: ')
-                    expression = []
-                    
-                except:
-                    try:
-                        password = ''.join(expression)
-                        print(ssid, password)
-                        connect_wifi(ssid, password)
-                        
-                    except Exception as e:
-                        print('ERROR: ', e)
-                        
-        else:
-            expression.append(button)
-        print(expression)
-        
+                counter += 1
+            except ValueError:
+                print('You Must Enter an integer')
+                
+        if counter == 1 and ssid == 'Create New +':
+            print('Create SSID: ')
+            function, ssid = get_expression(character_array, shift_character_array, 0)
+            print('Create password: ')
+            function, password = get_expression(character_array, shift_character_array, 0)
+            create_hotspot(''.join(ssid), ''.join(password))
+        elif counter == 1:
+            print('Enter Wi-Fi password: ')
+            function, expression = get_expression(character_array, shift_character_array, 0)
+            password = ''.join(expression)
+            connect_wifi(ssid, password)
+      
 def scan():
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     time.sleep(1) # Allow time for initialization
-
     print("Scanning...")
     networks = wlan.scan() # Scan for networks
+    print('0: Create New +')
     for num, net in enumerate(networks):
         print(num+1, ':', net[0].decode('utf-8'), net[3]) # Prints (SSID, BSSID, channel, RSSI, security, hidden)
-    
     print('Select Wi-Fi Network: ')
+    wlan.deinit()
+    return networks
+
+def create_hotspot(ssid, password):
+    ap = network.WLAN(network.AP_IF)
+    ap.config(essid=ssid, password=password)
+    ap.active(True)
+    while not ap.active():
+        pass
+    print('Hotspot is active!')
+    print('Connect to:', ssid)
+    print('Pico W IP Address:', ap.ifconfig()[0])
     
 def connect_wifi(ssid, password):
     wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
     wlan.connect(ssid, password)
     # 4. Wait for connection (with timeout)
     max_wait = 10
@@ -186,7 +184,6 @@ def connect_wifi(ssid, password):
         max_wait -= 1
         print('Waiting for connection...')
         time.sleep(1)
-
     # 5. Check connection status
     if wlan.status() != 3:
         print(f"Connection failed. Status code: {wlan.status()}")
@@ -194,9 +191,50 @@ def connect_wifi(ssid, password):
         print("Connected successfully!")
         status = wlan.ifconfig()
         print('IP address: ' + status[0])
-     
-     
+    wlan.config(pm=0xa11140)
+    
+
+async def recv_task():
+    while not stop_event.is_set():
+        try:
+            data, addr = s.recvfrom(1024)
+            print(f"\nReceived: {data.decode()}")
+        except OSError:
+            pass # No data ready
+        await asyncio.sleep(0.01)
+
+async def send_task():
+    while not stop_event.is_set():
+        # Call your custom function
+        # Expecting: function (str), expression (list/str)
+        func, expr = get_expression(character_array, shift_character_array, 0)
+        
+        if func == 'MODE':
+            print("Mode change detected. Stopping...")
+            stop_event.set()
+        elif expr:
+            # Join list into string and send
+            msg = "".join(expr)
+            s.sendto(msg.encode(), ('255.255.255.255', 5005))
+            print(f"Sent: {msg}")
+            
+        await asyncio.sleep(0.1)
+
+async def main():
+    print("System Running. Press 'MODE' to exit.")
+    await asyncio.gather(recv_task(), send_task())
+    print("All processes ended. Moving on...")
+
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.bind(('0.0.0.0', 5005))
+s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+s.setblocking(False)
+
 while True:
     calculator(expression)
     characters(expression)
     wifi()
+    asyncio.run(main())
+
+
+
