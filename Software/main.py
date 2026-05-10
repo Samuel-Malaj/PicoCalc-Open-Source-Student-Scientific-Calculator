@@ -4,7 +4,28 @@ from Calculate import calculate
 import network
 import uasyncio as asyncio
 import socket
+import lowpower
+import errno
 
+# --- 1. SETUP ---
+# Safety: If GP1 is connected to GND, don't sleep!
+def power_off():
+    safety_pin = machine.Pin(1, machine.Pin.IN, machine.Pin.PULL_UP)
+    if safety_pin.value() == 0:
+        print("Safety mode: Sleep disabled. Connect GP1 to 3V3 to allow sleep.")
+        while True: time.sleep(1)
+
+    button = machine.Pin(0, machine.Pin.IN, machine.Pin.PULL_UP)
+    indicator = machine.Pin(7, machine.Pin.OUT, value=0)
+
+    LED = Pin('LED', Pin.OUT)
+    LED.value(1)
+    LED.value(0)
+    lowpower.dormant_until_pin(0)
+    
+##############################################################################
+print('Switching off')
+power_off()
 LED = Pin('LED', Pin.OUT)
 LED.value(1)
 
@@ -26,9 +47,9 @@ C6 = Pin(12, Pin.IN, Pin.PULL_DOWN)
 rows = [R1, R2, R3, R4, R5, R6, R7]
 columns = [C1, C2, C3, C4, C5, C6]
 
-FUNCTIONS = ['POWER', 'ANS', 'DEL', 'AC', 'MODE', 'EXE', 'SHIFT']
+FUNCTIONS = ['POWER', 'ANS', 'DEL', 'AC', 'MODE', 'EXE', 'SHIFT', 'WiFi']
 
-calculator_array = [['POWER', 'SHIFT', '#', '#', '#', '#'],
+calculator_array = [['POWER', 'SHIFT', 'WiFi', '#', '#', '#'],
                   ['#', '/', '#', '^', '^', '#'],
                   ['ANS', 'sin(', 'cos(', 'tan(', '(', ')'],
                   ['7', '8', '9', 'DEL', 'AC'],
@@ -36,7 +57,7 @@ calculator_array = [['POWER', 'SHIFT', '#', '#', '#', '#'],
                   ['1', '2', '3', '+', '-'],
                   ['0', '.', '#', 'MODE', 'EXE']]
 
-character_array = [['POWER', 'SHIFT', '#', '#', '#', '#'],
+character_array = [['POWER', 'SHIFT', 'WiFi', '#', '#', '#'],
                    ['A', 'B', 'C', 'D', 'E', 'F'],
                    ['G', 'H', 'I', 'J', 'K', 'L'],
                    ['M', 'N', 'O', 'DEL', 'AC'],
@@ -44,7 +65,7 @@ character_array = [['POWER', 'SHIFT', '#', '#', '#', '#'],
                    ['U', 'V', 'W', 'X', 'Y'],
                    ['Z', ' ', '#', 'MODE', 'EXE']]
 
-shift_character_array = [['POWER', '#', '#', '#', '#', '#'],
+shift_character_array = [['POWER', 'SHIFT', 'WiFi', '#', '#', '#'],
                    ['#', '#', '#', '#', '#', '#'],
                    ['#', '#', '#', '#', '(', ')'],
                    ['7', '8', '9', 'DEL', 'AC'],
@@ -54,7 +75,7 @@ shift_character_array = [['POWER', '#', '#', '#', '#', '#'],
 
 expression = []
 ANS = 0
-
+##############################################################################
 def listen():
     while True:
         for row_num, row in enumerate(rows):
@@ -93,6 +114,11 @@ def get_expression(array, shift_array, ANS):
                 shift = True
             if button == 'ANS':
                 expression.append(ANS)
+            if button == 'POWER':
+                print('Power Off')
+                machine.reset()
+            if button == 'WiFi':
+                wifi()
         else:
             expression.append(button)
         print(expression)
@@ -102,8 +128,11 @@ def calculator(expression):
     while True:
         function, expression = get_expression(calculator_array, character_array, ANS)
         if function == 'EXE':
-            ANS = calculate(expression)
-            print(ANS)
+            answer = calculate(expression)
+            if 'Error' not in answer:
+                ANS = answer         
+            print(answer)
+        
         if function == 'MODE':
             return ''
         
@@ -111,7 +140,7 @@ def characters(expression):
     while True:
         function, expression = get_expression(character_array, shift_character_array, 0)
         if function == 'EXE':
-            pass # send_message(expression)
+            pass
         if function == 'MODE':
             return ''
         
@@ -163,6 +192,7 @@ def scan():
     return networks
 
 def create_hotspot(ssid, password):
+    network.WLAN(network.STA_IF).active(False)
     ap = network.WLAN(network.AP_IF)
     ap.config(essid=ssid, password=password)
     ap.active(True)
@@ -173,6 +203,7 @@ def create_hotspot(ssid, password):
     print('Pico W IP Address:', ap.ifconfig()[0])
     
 def connect_wifi(ssid, password):
+    network.WLAN(network.AP_IF).active(False)
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     wlan.connect(ssid, password)
@@ -203,27 +234,39 @@ async def recv_task():
             pass # No data ready
         await asyncio.sleep(0.01)
 
-async def send_task():
+async def send_task(broadcast_ip):
     while not stop_event.is_set():
         # Call your custom function
         # Expecting: function (str), expression (list/str)
-        func, expr = get_expression(character_array, shift_character_array, 0)
+        function, expression = get_expression(character_array, shift_character_array, 0)
         
-        if func == 'MODE':
+        if function == 'MODE':
             print("Mode change detected. Stopping...")
             stop_event.set()
-        elif expr:
+        elif expression:
             # Join list into string and send
-            msg = "".join(expr)
-            s.sendto(msg.encode(), ('255.255.255.255', 5005))
-            print(f"Sent: {msg}")
+            msg = "".join(expression)
+            try:
+                s.sendto(msg.encode(), (broadcast_ip, 5005))
+                print(f"Sent: {msg}")
+            except OSError as e:
+                print(e)
             
         await asyncio.sleep(0.1)
 
-async def main():
-    print("System Running. Press 'MODE' to exit.")
-    await asyncio.gather(recv_task(), send_task())
-    print("All processes ended. Moving on...")
+async def messaging():
+    if ap.active():
+        ip_info = ap.ifconfig()
+    if wlan.active():
+        ip_info = wlan.ifconfig()
+    broadcast_ip = ".".join(ip_info[0].split('.')[:-1]) + ".255"
+    print('Messaging Mode')
+    print('Notice: If not connected to a wifi network, messaging will fail')
+    await asyncio.gather(recv_task(), send_task(broadcast_ip))
+ 
+ 
+ap = network.WLAN(network.AP_IF)
+wlan = network.WLAN(network.STA_IF)
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind(('0.0.0.0', 5005))
@@ -233,8 +276,6 @@ s.setblocking(False)
 while True:
     calculator(expression)
     characters(expression)
-    wifi()
-    asyncio.run(main())
-
-
-
+    stop_event = asyncio.Event()
+    if ap.active() or wlan.active():
+        asyncio.run(messaging())
