@@ -136,9 +136,9 @@ Designed in KiCad. Key design decisions:
 - [x] PCB designed and ordered
 - [x] Schematic complete
 - [ ] IR LED circuit designed and verified
-- [ ] MicroPython calculator engine
+- [x] MicroPython calculator engine
 - [ ] Display driver integration
-- [ ] WiFi messaging
+- [x] WiFi messaging
 - [ ] IR control implementation
 - [ ] Games
 
