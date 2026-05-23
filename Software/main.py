@@ -6,23 +6,18 @@ import uasyncio as asyncio
 import socket
 import lowpower
 import errno
+from icons import *
 
 LED = Pin('LED', Pin.OUT)
 while True:
     try:
         from OLED import *
         break
-        
     except Exception as e:
         print(e)
         LED.toggle()
         time.sleep(0.5)
         LED.toggle()
-        time.sleep(0.5)
-        LED.toggle()
-        time.sleep(0.5)
-        LED.toggle()
-        time.sleep(0.5)
 # --- 1. SETUP ---
 # Safety: If GP1 is connected to GND, don't sleep!
 def power_off():
@@ -43,7 +38,7 @@ def power_off():
 # print('Switching off')
 # power_off()
 LED.value(1)
-clear()
+clear_all()
 
 R1 = Pin(0, Pin.OUT)
 R2 = Pin(1, Pin.OUT)
@@ -63,17 +58,17 @@ C6 = Pin(12, Pin.IN, Pin.PULL_DOWN)
 rows = [R1, R2, R3, R4, R5, R6, R7]
 columns = [C1, C2, C3, C4, C5, C6]
 
-FUNCTIONS = ['POWER', 'ANS', 'DEL', 'AC', 'MODE', 'EXE', 'SHIFT', 'WiFi']
+FUNCTIONS = ['POWER', 'ANS', 'DEL', 'AC', 'MODE', 'EXE', 'SHIFT', 'WiFi', 'LEFT', 'RIGHT']
 
-calculator_array = [['POWER', 'SHIFT', 'WiFi', '#', '#', '#'],
+calculator_array = [['POWER', 'SHIFT', 'WiFi', 'WiFi', 'LEFT', 'RIGHT'],
                   ['#', '/', '#', '^', '^', '#'],
                   ['ANS', 'sin(', 'cos(', 'tan(', '(', ')'],
                   ['7', '8', '9', 'DEL', 'AC'],
                   ['4', '5', '6', 'x', '/'],
                   ['1', '2', '3', '+', '-'],
-                  ['0', '.', '#', 'MODE', 'EXE']]
+                  ['0', '.', '0 ', 'MODE', 'EXE']]
 
-character_array = [['POWER', 'SHIFT', 'WiFi', '#', '#', '#'],
+character_array = [['POWER', 'SHIFT', 'WiFi', 'WiFi', 'LEFT', 'RIGHT'],
                    ['A', 'B', 'C', 'D', 'E', 'F'],
                    ['G', 'H', 'I', 'J', 'K', 'L'],
                    ['M', 'N', 'O', 'DEL', 'AC'],
@@ -81,13 +76,13 @@ character_array = [['POWER', 'SHIFT', 'WiFi', '#', '#', '#'],
                    ['U', 'V', 'W', 'X', 'Y'],
                    ['Z', ' ', '#', 'MODE', 'EXE']]
 
-shift_character_array = [['POWER', 'SHIFT', 'WiFi', '#', '#', '#'],
+shift_character_array = [['POWER', 'SHIFT', 'WiFi', 'WiFi', 'LEFT', 'RIGHT'],
                    ['#', '#', '#', '#', '#', '#'],
                    ['#', '#', '#', '#', '(', ')'],
                    ['7', '8', '9', 'DEL', 'AC'],
                    ['4', '5', '6', '<', '>'],
                    ['1', '2', '3', 'X', 'Y'],
-                   ['0', '.', '#', 'MODE', 'EXE']]
+                   ['0', '.', '0', 'MODE', 'EXE']]
 
 expression = []
 ANS = 0
@@ -109,66 +104,85 @@ def listen():
 def get_expression(array, shift_array, ANS, line):
     expression = []
     shift = False
+    X = 0
     while True:
+        if shift:
+            add_icon(oled, SHIFT, 118, 0)
+        else:
+            oled.rect(118, 0, 10, 10, 0, fill=True)
+            oled.show()
         x, y = listen()
         if shift:
             button = shift_array[y][x]
             shift = False
         else:
             button = array[y][x]
+            if button == 'SHIFT':
+                shift = True
             
         if button in FUNCTIONS:
             if button == 'DEL' and len(expression) > 0:
                 expression.pop()
             if button == 'AC':
                 expression = []
+                clear_main()
+                X = 0
             if button == 'MODE':
                 return 'MODE', expression
             if button == 'EXE':
                 return 'EXE', expression
-            if button == 'SHIFT':
-                shift = True
             if button == 'ANS':
                 expression.append(ANS)
             if button == 'POWER':
                 print('Power Off')
+                display_line('Power Off', 0, 0)
+                time.sleep(2)
                 machine.reset()
             if button == 'WiFi':
                 wifi()
+            if button == 'LEFT':
+                X += 10
+            if button == 'RIGHT':
+                print('RIGHT')
+                X -= 10
         else:
             expression.append(button)
         print(expression)
 
-        oled.rect(0, line, 128, 8, 0, fill=True)
+        oled.rect(0, line, 118, 8, 0, fill=True)
         oled.show()
-        append_output(''.join(expression), 0, line)
+        append_output(''.join(expression), X, line)
 
 def calculator(expression):
     ANS = '0'
+    clear_main()
     while True:
-        function, expression = get_expression(calculator_array, character_array, ANS, line=0)
+        function, expression = get_expression(calculator_array, character_array, ANS, line=10)
         if function == 'EXE':
             answer = calculate(expression)
             if 'Error' not in answer:
                 ANS = answer         
             print(answer)
-            display_output(answer)
+            clear_main()
+            append_output(answer, 0, 54)
         
         if function == 'MODE':
             return ''
         
 def characters(expression):
     while True:
-        function, expression = get_expression(character_array, shift_character_array, 0, line=0)
+        function, expression = get_expression(character_array, shift_character_array, 0, line=10)
         if function == 'EXE':
             pass
         if function == 'MODE':
             return ''
         
 def wifi():
+    oled.rect(0, 0, 106, 10, 0, fill=True)
+    oled.show()
     networks = scan()
     counter = 0
-    function, expression = get_expression(character_array, shift_character_array, 0, line=0)
+    function, expression = get_expression(character_array, shift_character_array, 0, line=10)
                     
     if function == 'MODE':
         return ''             
@@ -178,14 +192,14 @@ def wifi():
                 num = int(''.join(expression))
                 if num == 0:
                     print('SELECTED 0 CREATE NEW')
-                    display_line('SELECTED 0 CREATE NEW', 0, 0)
+                    display_line('SELECTED 0 CREATE NEW', 0, 10)
                     ssid = 'Create New +'
                 else:
                     ssid = networks[num-1][0].decode('utf-8')
                     print('Selected:', ssid)
-                    clear()
-                    append_output('Selected:', 0, 0)
-                    append_output(ssid, 0, 10)
+                    clear_main()
+                    append_output('Selected:', 0, 10)
+                    append_output(ssid, 0, 20)
                     
                 counter += 1
             except ValueError:
@@ -193,32 +207,36 @@ def wifi():
                 
         if counter == 1 and ssid == 'Create New +':
             print('Create SSID: ')
-            display_line('Create SSID: ', 0, 0)
-            function, ssid = get_expression(character_array, shift_character_array, 0, line=10)
+            display_line('Create SSID: ', 0, 10)
+            function, ssid = get_expression(character_array, shift_character_array, 0, line=20)
             print('Create password: ')
-            display_line('Create Password: ', 0, 0)
-            function, password = get_expression(character_array, shift_character_array, 0, line=10)
+            display_line('Create Password: ', 0, 10)
+            function, password = get_expression(character_array, shift_character_array, 0, line=20)
             create_hotspot(''.join(ssid), ''.join(password))
         elif counter == 1:
             print('Enter Wi-Fi password: ')
-            display_line('Enter Wi-Fi password: ', 0, 0)
-            function, expression = get_expression(character_array, shift_character_array, 0, line=10)
+            display_line('Enter Wi-Fi password: ', 0, 10)
+            function, expression = get_expression(character_array, shift_character_array, 0, line=20)
             password = ''.join(expression)
             connect_wifi(ssid, password)
+    
+    if wlan.isconnected() or ap.isconnected():
+        add_icon(oled, WIFI, 0, 0)
       
 def scan():
+    clear_main()
     global wlan
     wlan.active(True)
-    time.sleep(1) # Allow time for initialization
-    print("Scanning for WiFi...")
-    display_line('Scanning for WiFi...', 0, 0)
+    time.sleep(1)
+    print("Scanning WiFi...")
+    append_output('Scanning WiFi...', 0, 10)
     networks = wlan.scan() # Scan for networks
     print('0:Create New +')
-    display_line('0:Create New +', 0, 10)
+    append_output('0:Create New +', 0, 20)
     for num, net in enumerate(networks):
         network = ''.join([str(num+1), ':', net[0].decode('utf-8'), str(net[3])]) # Prints (SSID, BSSID, channel, RSSI, security, hidden)
         print(network)
-        append_output(network, 0, num * 10 + 20)
+        append_output(network, 0, num * 10 + 30)
         
     print('Select Wi-Fi Network: ')
     wlan.deinit()
@@ -231,11 +249,16 @@ def create_hotspot(ssid, password):
     ap.active(True)
     while not ap.active():
         pass
-    print('Hotspot is active!')
-    display_input('Hotspot is active!')
+    print('Hotspot active!')
+    display_input('Hotspot active!')
     time.sleep(2)
+    clear_main()
     print('Connect to:', ssid)
     print('Pico W IP Address:', ap.ifconfig()[0])
+    
+    if ap.active() or wlan.isconnected():
+        add_icon(oled, WIFI, 107, 0)
+        print('connected')
     
 def connect_wifi(ssid, password):
     network.WLAN(network.AP_IF).active(False)
@@ -249,14 +272,14 @@ def connect_wifi(ssid, password):
             break
         max_wait -= 1
         print('Waiting for connection...')
-        display_line('Waiting for connection...', 0, 0)
+        display_line('Waiting for connection...', 0, 10)
         time.sleep(1)
     # 5. Check connection status
     if wlan.status() != 3:
         print(f"Connection failed. Status code: {wlan.status()}")
     else:
         print("Connected successfully!")
-        display_line("Connected successfully!", 0, 0)
+        display_line("Connected successfully!", 0, 10)
         status = wlan.ifconfig()
         print('IP address: ' + status[0])
     wlan.config(pm=0xa11140)
@@ -265,17 +288,19 @@ async def recv_task():
     while not stop_event.is_set():
         try:
             data, addr = s.recvfrom(1024)
-            string = 'Received:' + str(data.decode())
-            print(string)
-            display_line(string, 0, 54)
+            string = str(data.decode())
+            clear_main()
+            append_output('Received:', 0, 44)
+            append_output(string, 0, 54)
         except OSError:
             pass # No data ready
         await asyncio.sleep(0.01)
 
 async def send_task(broadcast_ip):
     while not stop_event.is_set():
-        function, expression = get_expression(character_array, shift_character_array, 0, line=10)
-        
+        oled.rect(0, 10, 128, 20, 0, fill=True)
+        oled.show()
+        function, expression = get_expression(character_array, shift_character_array, 0, line=20)
         if function == 'MODE':
             print("Mode change detected. Stopping...")
             stop_event.set()
@@ -285,8 +310,10 @@ async def send_task(broadcast_ip):
             try:
                 s.sendto(msg.encode(), (broadcast_ip, 5005))
                 print(f"Sent: {msg}")
-                display_line('Sent:', 0, 0)
-                append_output(msg, 0, 10)
+                append_output('Sent:', 0, 10)
+                append_output(msg, 0, 20)
+                time.sleep(1)
+                clear_main()
                 
             except OSError as e:
                 print(e)
@@ -300,11 +327,10 @@ async def messaging():
         ip_info = wlan.ifconfig()
     broadcast_ip = ".".join(ip_info[0].split('.')[:-1]) + ".255"
     print('Messaging Mode')
-    display_line('Messaging Mode', 0, 0)
     print('Notice: If not connected to a wifi network, messaging will fail')
     await asyncio.gather(recv_task(), send_task(broadcast_ip))
  
- 
+''' Main '''
 ap = network.WLAN(network.AP_IF)
 wlan = network.WLAN(network.STA_IF)
 
@@ -314,9 +340,39 @@ s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 s.setblocking(False)
 
 while True:
-    calculator(expression)
-    characters(expression)
-    stop_event = asyncio.Event()
-    if ap.active() or wlan.active():
-        asyncio.run(messaging())
+    try:
+        oled.rect(0, 0, 106, 10, 0, fill=True)
+        oled.show()
+        append_output('Calc Mode', 0, 0)
+        calculator(expression)
+        
+        oled.rect(0, 0, 106, 10, 0, fill=True)
+        oled.show()
+        append_output('Typing Mode', 0, 0)
+        clear_main()
+        characters(expression)
+        
+        ## messaging
+        oled.rect(0, 0, 106, 10, 0, fill=True)
+        oled.show()
+        append_output('SMS Mode', 0, 0)
+        clear_main()
+        stop_event = asyncio.Event()
+        if ap.active() or wlan.active():
+            asyncio.run(messaging())
+        else:
+            display_line('SMS unavailable', 0, 10)
+            append_output('No Wi-Fi', 0, 20)
+            time.sleep(1.5)
+    
+    except Exception as e:
+        print(e)
+        try:
+            display_line('System Error', 0, 10)
+        except:
+            LED.toggle()
+            time.sleep(1)
+            LED.toggle()
+
+
 
