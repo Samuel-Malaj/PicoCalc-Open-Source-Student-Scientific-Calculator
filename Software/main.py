@@ -7,6 +7,7 @@ import socket
 import lowpower
 import errno
 from icons import *
+import urequests
 
 LED = Pin('LED', Pin.OUT)
 while True:
@@ -221,7 +222,7 @@ def wifi():
             connect_wifi(ssid, password)
     
     if wlan.isconnected() or ap.isconnected():
-        add_icon(oled, WIFI, 0, 0)
+        add_icon(oled, WIFI, 107, 0)
       
 def scan():
     clear_main()
@@ -295,6 +296,24 @@ async def recv_task():
         except OSError:
             pass # No data ready
         await asyncio.sleep(0.01)
+        
+def send_whatsapp():
+    while True:
+        function, expression = get_expression(character_array, shift_character_array, 0, line=20)
+        if function == 'MODE':
+            break
+        msg = '+'.join(''.join(expression).split(' '))
+        print('Sending:', msg)
+        append_output('Sending:', 0, 10)
+        append_output(msg, 0, 20)
+        api_key = 'API_KEY'
+        phone_number = 'PHONE_NUMBER'
+        url = f"https://api.callmebot.com/whatsapp.php?phone={phone_number}&text={msg}&apikey={api_key}"
+        print(url)
+        response = urequests.get(url)
+        print(response.text)
+        response.close()
+        clear_main()
 
 async def send_task(broadcast_ip):
     while not stop_event.is_set():
@@ -339,6 +358,7 @@ s.bind(('0.0.0.0', 5005))
 s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 s.setblocking(False)
 
+
 while True:
     try:
         oled.rect(0, 0, 106, 10, 0, fill=True)
@@ -364,6 +384,10 @@ while True:
             display_line('SMS unavailable', 0, 10)
             append_output('No Wi-Fi', 0, 20)
             time.sleep(1.5)
+        oled.rect(0, 0, 106, 10, 0, fill=True)
+        oled.show()
+        append_output('Whatsapp', 0, 0)
+        send_whatsapp()
     
     except Exception as e:
         print(e)
