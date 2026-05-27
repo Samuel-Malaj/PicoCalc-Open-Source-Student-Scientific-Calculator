@@ -50,9 +50,6 @@ def wifi():
             function, expression = get_expression(character_array, shift_character_array, 0, line=20)
             password = ''.join(expression)
             connect_wifi(ssid, password)
-    
-    if wlan.isconnected() or ap.isconnected():
-        add_icon(oled, WIFI, 107, 0)
       
 def scan():
     clear_main()
@@ -68,7 +65,6 @@ def scan():
         network = ''.join([str(num+1), ':', net[0].decode('utf-8'), str(net[3])]) # Prints (SSID, BSSID, channel, RSSI, security, hidden)
         print(network)
         append_output(network, 0, num * 10 + 30)
-        
     print('Select Wi-Fi Network: ')
     wlan.deinit()
     return networks
@@ -85,11 +81,8 @@ def create_hotspot(ssid, password):
     time.sleep(2)
     clear_main()
     print('Connect to:', ssid)
-    print('Pico W IP Address:', ap.ifconfig()[0])
-    
-    if ap.active() or wlan.isconnected():
-        add_icon(oled, WIFI, 107, 0)
-        print('connected')
+    print('Pico W IP Address:', ap.ifconfig()[0]) 
+    indicate_wifi()
     
 def connect_wifi(ssid, password):
     network.WLAN(network.AP_IF).active(False)
@@ -114,6 +107,7 @@ def connect_wifi(ssid, password):
         status = wlan.ifconfig()
         print('IP address: ' + status[0])
     wlan.config(pm=0xa11140)
+    indicate_wifi()
     
 def prepare_socket():
     ap = network.WLAN(network.AP_IF)
@@ -123,3 +117,12 @@ def prepare_socket():
     s.bind(('0.0.0.0', 5005))
     s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     s.setblocking(False)
+    
+def indicate_wifi():
+    oled.rect(107, 0, 10, 10, 0, fill=True)
+    oled.show()
+    if wlan.isconnected() or ap.isconnected():
+        add_icon(oled, WIFI, 107, 0)
+    else:
+        add_icon(oled, NO_WIFI, 107, 0)
+        print('No Wifi')
