@@ -50,29 +50,33 @@ def main():
     prepare_socket()
     while True:
         try:
-            oled.rect(0, 0, 106, 10, 0, fill=True)
-            oled.show()
+            indicate_wifi()
+            clear_mode_line()
+            clear_main()
             append_output('Calc Mode', 0, 0)
             calculator(expression)
-                
-            oled.rect(0, 0, 106, 10, 0, fill=True)
-            oled.show()
-            append_output('Typing Mode', 0, 0)
+            
+            indicate_wifi()
+            clear_mode_line()
             clear_main()
+            append_output('Typing Mode', 0, 0)
             characters(expression)
                 
-                ## messaging
-            oled.rect(0, 0, 106, 10, 0, fill=True)
-            oled.show()
-            append_output('SMS Mode', 0, 0)
+            ## messaging
+            indicate_wifi()
             clear_main()
-            
+            clear_mode_line()
+            append_output('SMS Mode', 0, 0)
             if ap.active() or wlan.active():
                 asyncio.run(messaging())
             else:
                 display_line('SMS unavailable', 0, 10)
                 append_output('No Wi-Fi', 0, 20)
                 time.sleep(1.5)
+                
+            indicate_wifi()
+            clear_mode_line()
+            clear_main()
             oled.rect(0, 0, 106, 10, 0, fill=True)
             oled.show()
             append_output('Whatsapp', 0, 0)
@@ -88,3 +92,4 @@ def main():
                 LED.toggle()
                 
 main()
+
