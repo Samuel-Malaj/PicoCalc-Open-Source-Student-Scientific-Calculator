@@ -1,7 +1,7 @@
 from OLED import *
 from machine import Pin
 import time
-from icons import add_icon, NO_WIFI, SHIFT, WIFI
+from icons import add_icon, NO_WIFI, SHIFT, WIFI, ALPHA, NUMERICAL
 
 LED = Pin('LED', Pin.OUT)
 R1 = Pin(0, Pin.OUT)
@@ -30,7 +30,7 @@ calculator_array = [['POWER', 'SHIFT', 'WiFi', 'WiFi', 'LEFT', 'RIGHT'],
                   ['7', '8', '9', 'DEL', 'AC'],
                   ['4', '5', '6', 'x', '/'],
                   ['1', '2', '3', '+', '-'],
-                  ['0', '.', '0 ', 'MODE', 'EXE']]
+                  ['0', '.', '0', 'MODE', 'EXE']]
 
 character_array = [['POWER', 'SHIFT', 'WiFi', 'WiFi', 'LEFT', 'RIGHT'],
                    ['A', 'B', 'C', 'D', 'E', 'F'],
@@ -66,6 +66,16 @@ def listen():
         time.sleep_ms(10)
           
 def get_expression(array, shift_array, ANS, line):
+    if array == calculator_array:
+        oled.rect(95, 0, 10, 7, 0, fill=True)
+        oled.show()
+        add_icon(oled, NUMERICAL, 95, 0)
+    
+    if array == character_array:
+        oled.rect(95, 0, 10, 7, 0, fill=True)
+        oled.show()
+        add_icon(oled, ALPHA, 95, 0)
+    
     expression = []
     shift = False
     X = 0
