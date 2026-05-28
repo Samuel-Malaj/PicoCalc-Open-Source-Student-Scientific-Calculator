@@ -1,16 +1,12 @@
 from machine import Pin
 import time
-from Calculate import calculate
 import network
-import uasyncio as asyncio
-import socket
-import lowpower
 import errno
 from icons import *
-import urequests
 from inputs import *
 from WiFi import *
 from modes import *
+from utils import *
 
 LED = Pin('LED', Pin.OUT)
 while True:
@@ -24,25 +20,11 @@ while True:
         LED.toggle()
 # --- 1. SETUP ---
 # Safety: If GP1 is connected to GND, don't sleep!
-def power_off():
-    safety_pin = machine.Pin(1, machine.Pin.IN, machine.Pin.PULL_UP)
-    if safety_pin.value() == 0:
-        print("Safety mode: Sleep disabled. Connect GP1 to 3V3 to allow sleep.")
-        while True: time.sleep(1)
 
-    button = machine.Pin(0, machine.Pin.IN, machine.Pin.PULL_UP)
-    indicator = machine.Pin(7, machine.Pin.OUT, value=0)
-
-    LED = Pin('LED', Pin.OUT)
-    LED.value(1)
-    LED.value(0)
-    lowpower.dormant_until_pin(0)
-    
 ##############################################################################
-# print('Switching off')
-# power_off()
+#print('Switching off')
+#power_off()
 
-#############################################################################
         
  
 ''' Main '''
@@ -55,32 +37,36 @@ def main():
             clear_main()
             append_output('Calc Mode', 0, 0)
             calculator(expression)
-            
+                
             indicate_wifi()
             clear_mode_line()
             clear_main()
-            append_output('Typing Mode', 0, 0)
-            characters(expression)
-                
+            append_output('Notepad', 0, 0)
+            note_pad(expression)
+                    
             ## messaging
             indicate_wifi()
             clear_main()
             clear_mode_line()
             append_output('SMS Mode', 0, 0)
-            if ap.active() or wlan.active():
+            if ap.active() or wlan.isconnected():
                 asyncio.run(messaging())
             else:
-                display_line('SMS unavailable', 0, 10)
+                append_output('Unavailable', 0, 10)
                 append_output('No Wi-Fi', 0, 20)
                 time.sleep(1.5)
-                
+            
+            ## whatsapp
             indicate_wifi()
             clear_mode_line()
             clear_main()
-            oled.rect(0, 0, 106, 10, 0, fill=True)
-            oled.show()
             append_output('Whatsapp', 0, 0)
-            send_whatsapp()
+            if wlan.isconnected():
+                send_whatsapp()
+            else:
+                append_output('Unavailable', 0, 10)
+                append_output('No WiFi', 0, 20)
+                time.sleep(1.5)
         
         except Exception as e:
             print(e)
