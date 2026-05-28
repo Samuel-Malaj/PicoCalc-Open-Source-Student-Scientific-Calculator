@@ -91,6 +91,7 @@ async def send_task(broadcast_ip):
         await asyncio.sleep(0.1)
 
 async def messaging():
+    stop_event.clear()  # reset so it can be called again
     if ap.active():
         ip_info = ap.ifconfig()
     if wlan.active():
@@ -118,4 +119,5 @@ def send_whatsapp():
         print(response.text)
         response.close()
         clear_main()
+
 
