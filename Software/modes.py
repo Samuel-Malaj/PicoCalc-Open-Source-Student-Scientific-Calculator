@@ -5,6 +5,7 @@ import time
 from OLED import *
 from WiFi import *
 import urequests
+import socket
 
 ''' Calculator '''
 def calculator(expression):
@@ -49,58 +50,54 @@ def note_pad(expression):
 
 ''' SMS '''
 stop_event = asyncio.Event()
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.bind(('0.0.0.0', 5005))
+s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+s.setblocking(False)
 async def recv_task():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.setblocking(False)
-    s.bind(('', 5005))
-    try:
-        while not stop_event.is_set():
-            try:
-                data, addr = s.recvfrom(1024)
-                string = data.decode()
-                clear_main()
-                append_output('Received:', 0, 44)
-                append_output(string, 0, 54)
-            except OSError:
-                pass
-            await asyncio.sleep(0.01)
-    finally:
-        s.close()
+    while not stop_event.is_set():
+        try:
+            data, addr = s.recvfrom(1024)
+            string = str(data.decode())
+            clear_main()
+            append_output('Received:', 0, 44)
+            append_output(string, 0, 54)
+        except OSError:
+            pass # No data ready
+        await asyncio.sleep(0.01)
 
 async def send_task(broadcast_ip):
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.setblocking(False)
-    try:
-        while not stop_event.is_set():
-            oled.rect(0, 10, 128, 20, 0, fill=True)
-            oled.show()
-            function, expression = get_expression(character_array, shift_character_array, 0, line=20)
-            if function == 'MODE':
-                print("Mode change detected. Stopping...")
-                stop_event.set()
-            elif expression:
-                msg = "".join(expression)
-                try:
-                    s.sendto(msg.encode(), (broadcast_ip, 5005))
-                    print(f"Sent: {msg}")
-                    append_output('Sent:', 0, 10)
-                    append_output(msg, 0, 20)
-                    await asyncio.sleep(1)  # not time.sleep
-                    clear_main()
-                except OSError as e:
-                    print(e)
-            await asyncio.sleep(0.1)
-    finally:
-        s.close()
+    while not stop_event.is_set():
+        oled.rect(0, 10, 128, 20, 0, fill=True)
+        oled.show()
+        function, expression = get_expression(character_array, shift_character_array, 0, line=20)
+        if function == 'MODE':
+            print("Mode change detected. Stopping...")
+            stop_event.set()
+        elif expression:
+            # Join list into string and send
+            msg = "".join(expression)
+            try:
+                s.sendto(msg.encode(), (broadcast_ip, 5005))
+                print(f"Sent: {msg}")
+                append_output('Sent:', 0, 10)
+                append_output(msg, 0, 20)
+                time.sleep(1)
+                clear_main()
+                
+            except OSError as e:
+                print(e)
+            
+        await asyncio.sleep(0.1)
 
 async def messaging():
-    stop_event.clear()  # reset for reuse
     if ap.active():
         ip_info = ap.ifconfig()
     if wlan.active():
         ip_info = wlan.ifconfig()
     broadcast_ip = ".".join(ip_info[0].split('.')[:-1]) + ".255"
     print('Messaging Mode')
+    print('Notice: If not connected to a wifi network, messaging will fail')
     await asyncio.gather(recv_task(), send_task(broadcast_ip))
     
 ''' Whatsapp ''' 
@@ -113,8 +110,8 @@ def send_whatsapp():
         print('Sending:', msg)
         append_output('Sending:', 0, 10)
         append_output(msg, 0, 20)
-        api_key = '5801456'
-        phone_number = '+447309045098'
+        api_key = 'API_KEY'
+        phone_number = 'PHONE_NUMBER'
         url = f"https://api.callmebot.com/whatsapp.php?phone={phone_number}&text={msg}&apikey={api_key}"
         print(url)
         response = urequests.get(url)
