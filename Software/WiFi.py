@@ -23,8 +23,7 @@ def wifi():
                 num = int(''.join(expression))
                 if num == 0:
                     print('SELECTED 0 CREATE NEW')
-                    display_line('New Hotspot', 0, 10)
-                    time.sleep(1)
+                    display_line('SELECTED 0 CREATE NEW', 0, 10)
                     ssid = 'Create New +'
                 else:
                     ssid = networks[num-1][0].decode('utf-8')
@@ -32,7 +31,6 @@ def wifi():
                     clear_main()
                     append_output('Selected:', 0, 10)
                     append_output(ssid, 0, 20)
-                    time.sleep(1)
                     
                 counter += 1
             except ValueError:
@@ -40,17 +38,15 @@ def wifi():
                 
         if counter == 1 and ssid == 'Create New +':
             print('Create SSID: ')
-            clear_main()
-            append_output('Create SSID: ', 0, 10)
+            display_line('Create SSID: ', 0, 10)
             function, ssid = get_expression(character_array, shift_character_array, 0, line=20)
             print('Create password: ')
             display_line('Create Password: ', 0, 10)
             function, password = get_expression(character_array, shift_character_array, 0, line=20)
             create_hotspot(''.join(ssid), ''.join(password))
         elif counter == 1:
-            print('Wi-Fi password: ')
-            clear_main()
-            append_output('Wi-Fi password: ', 0, 10)
+            print('Enter Wi-Fi password: ')
+            display_line('Enter Wi-Fi password: ', 0, 10)
             function, expression = get_expression(character_array, shift_character_array, 0, line=20)
             password = ''.join(expression)
             connect_wifi(ssid, password)
@@ -100,18 +96,14 @@ def connect_wifi(ssid, password):
             break
         max_wait -= 1
         print('Waiting for connection...')
-        display_line('Connecting.', 0, 10)
-        time.sleep(0.5)
-        display_line('Connecting..', 0, 10)
-        time.sleep(0.5)
-        display_line('Connecting...', 0, 10)
-        time.sleep(0.5)
+        display_line('Waiting for connection...', 0, 10)
+        time.sleep(1)
     # 5. Check connection status
     if wlan.status() != 3:
         print(f"Connection failed. Status code: {wlan.status()}")
     else:
         print("Connected successfully!")
-        display_line("Connected! :)", 0, 10)
+        display_line("Connected successfully!", 0, 10)
         status = wlan.ifconfig()
         print('IP address: ' + status[0])
     wlan.config(pm=0xa11140)
