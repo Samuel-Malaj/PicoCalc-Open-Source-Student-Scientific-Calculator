@@ -29,7 +29,6 @@ while True:
  
 ''' Main '''
 def main():
-    prepare_socket()
     while True:
         try:
             indicate_wifi()
@@ -78,4 +77,3 @@ def main():
                 LED.toggle()
                 
 main()
-
