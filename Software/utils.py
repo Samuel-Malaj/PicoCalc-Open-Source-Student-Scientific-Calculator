@@ -30,6 +30,7 @@ def main_menu():
     sms_select = 3, 5
     wifi_select = 0, 4
     whatsapp_select = 1, 4
+    games_select = 2, 4
     while True:
         clear_main()
         oled.rect(0, 0, 128, 10, 0, fill=True)
@@ -39,6 +40,8 @@ def main_menu():
         oled.blit(notepad_icon, 63, 10+y)
         oled.blit(sms_icon, 0, 38+y)
         oled.blit(wifi_icon, 63, 38+y)
+        oled.blit(whatsapp_icon, 0, 66+y)
+        oled.blit(games_icon, 63, 66+y)
         oled.show()
         
         X, Y = listen()
@@ -54,6 +57,10 @@ def main_menu():
             return 'sms mode'
         elif X == wifi_select[0] and Y == wifi_select[1]:
             wifi()
+        elif X == whatsapp_select[0] and Y == whatsapp_select[1]:
+            return 'whatsapp'
+        elif X == games_select[0] and Y == games_select[1]:
+            return 'Games'
         
         elif X == 0 and Y == 0:
             clear_main()
@@ -62,5 +69,3 @@ def main_menu():
         elif X == 0 and Y == 1:
             clear_main()
             y -= 10
-            
-main_menu()
