@@ -29,35 +29,38 @@ def main_menu():
     sms_select = 2, 5
     sms_select = 3, 5
     wifi_select = 0, 4
+    whatsapp_select = 1, 4
     while True:
         clear_main()
-        add_large_icon(oled, calc_mode, 0, 10+y)
-        add_large_icon(oled, notepad_mode, 63, 10+y)
-        add_large_icon(oled, sms_mode, 0, 38+y)
-        add_large_icon(oled, wifi_mode, 63, 38+y)
         oled.rect(0, 0, 128, 10, 0, fill=True)
-        oled.show()
         add_icon(oled, NUMERICAL, 95, 0)
         indicate_wifi()
+        oled.blit(calc_icon, 0, 10+y)
+        oled.blit(notepad_icon, 63, 10+y)
+        oled.blit(sms_icon, 0, 38+y)
+        oled.blit(wifi_icon, 63, 38+y)
+        oled.show()
         
         X, Y = listen()
         
         if X == calc_select[0] and Y == calc_select[1]:
             clear_main()
             return 'calc mode'
-        if X == notepad_select[0] and Y == notepad_select[1]:
+        elif X == notepad_select[0] and Y == notepad_select[1]:
             clear_main()
             return 'notepad mode'
-        if X == sms_select[0] and Y == sms_select[1]:
+        elif X == sms_select[0] and Y == sms_select[1]:
             clear_main()
             return 'sms mode'
-        if X == wifi_select[0] and Y == wifi_select[1]:
+        elif X == wifi_select[0] and Y == wifi_select[1]:
             wifi()
         
-        if X == 0 and Y == 0:
+        elif X == 0 and Y == 0:
             clear_main()
             y += 10
             
-        if X == 0 and Y == 1:
+        elif X == 0 and Y == 1:
             clear_main()
             y -= 10
+            
+main_menu()
