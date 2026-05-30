@@ -60,12 +60,12 @@ def main_menu():
         elif X == whatsapp_select[0] and Y == whatsapp_select[1]:
             return 'whatsapp'
         elif X == games_select[0] and Y == games_select[1]:
-            return 'Games'
+            return 'games'
         
-        elif X == 0 and Y == 0:
+        elif X == 4 and Y == 1:
             clear_main()
-            y += 10
+            y += 15
             
-        elif X == 0 and Y == 1:
+        elif X == 5 and Y == 1:
             clear_main()
-            y -= 10
+            y -= 15
