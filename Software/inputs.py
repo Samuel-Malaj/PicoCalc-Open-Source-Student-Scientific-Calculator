@@ -2,6 +2,7 @@ from OLED import *
 from machine import Pin
 import time
 from icons import add_icon, NO_WIFI, SHIFT, WIFI, ALPHA, NUMERICAL
+import machine
 
 LED = Pin('LED', Pin.OUT)
 R1 = Pin(0, Pin.OUT)
@@ -22,10 +23,10 @@ C6 = Pin(12, Pin.IN, Pin.PULL_DOWN)
 rows = [R1, R2, R3, R4, R5, R6, R7]
 columns = [C1, C2, C3, C4, C5, C6]
 
-FUNCTIONS = ['POWER', 'ANS', 'DEL', 'AC', 'MODE', 'EXE', 'SHIFT', 'WiFi', 'LEFT', 'RIGHT']
+FUNCTIONS = ['POWER', 'ANS', 'DEL', 'AC', 'MODE', 'EXE', 'SHIFT', 'WiFi', 'LEFT', 'RIGHT', 'UP', 'DOWN']
 
 calculator_array = [['POWER', 'SHIFT', 'WiFi', 'WiFi', 'LEFT', 'RIGHT'],
-                  ['#', '/', '#', '^', '^', '#'],
+                  ['#', '/', '#', '^', 'UP', 'DOWN'],
                   ['ANS', 'sin(', 'cos(', 'tan(', '(', ')'],
                   ['7', '8', '9', 'DEL', 'AC'],
                   ['4', '5', '6', 'x', '/'],
@@ -41,7 +42,7 @@ character_array = [['POWER', 'SHIFT', 'WiFi', 'WiFi', 'LEFT', 'RIGHT'],
                    ['Z', ' ', '#', 'MODE', 'EXE']]
 
 shift_character_array = [['POWER', 'SHIFT', 'WiFi', 'WiFi', 'LEFT', 'RIGHT'],
-                   ['#', '#', '#', '#', '#', '#'],
+                   ['#', '#', '#', '#', 'UP', 'DOWN'],
                    ['#', '#', '#', '#', '(', ')'],
                    ['7', '8', '9', 'DEL', 'AC'],
                    ['4', '5', '6', '<', '>'],
@@ -126,3 +127,12 @@ def get_expression(array, shift_array, ANS, line):
         oled.rect(0, line, 118, 8, 0, fill=True)
         oled.show()
         append_output(''.join(expression), X, line)
+        
+def select_num(max_length):
+    expression = []
+    for i in range(max_length):
+        x, y = listen()
+        expression.append(calculator_array[y][x])
+    expression = ''.join(expression)
+    
+    return expression
