@@ -152,12 +152,14 @@ def Tic_Tac_Toe():
     while selected != 'MODE' and not winner:
         # X's turn
         selected = select_num(1)
+        selected = int(selected) if selected.isdigit() else selected
         if selected == 'MODE':
             break
         else:
             end = False
-            while (not selected.isdigit() or selected in x_positions or selected in o_positions) and end == False:
+            while (not isinstance(selected, int)  or selected in x_positions or selected in o_positions) and end == False:
                 selected = select_num(1)
+                selected = int(selected) if selected.isdigit() else selected
                 if selected == 'MODE':
                     end = True
                     break
@@ -165,6 +167,7 @@ def Tic_Tac_Toe():
             break
         position = positions[int(selected)-1]
         x_positions.append(int(selected))
+        print('x', x_positions)
         draw_icon(oled, x_icon, 21, position[0], position[1])
         oled.show()
         
@@ -175,15 +178,24 @@ def Tic_Tac_Toe():
             oled.show()
             time.sleep(2)
             winner = True
+            
+        if len(x_positions) + len(o_positions) == 9:
+            draw_icon(oled, tic_tac_toe_grid, 64, 0, 0)
+            oled.text('Tie!', 65, 32)
+            oled.show()
+            time.sleep(2)
+            winner = True
              
         # O's turn
         selected = select_num(1)
+        selected = int(selected) if selected.isdigit() else selected
         if selected == 'MODE':
             break
         else:
             end = False
-            while (not selected.isdigit() or selected in x_positions or selected in o_positions) and end == False:
+            while (not isinstance(selected, int)  or selected in x_positions or selected in o_positions) and end == False:
                 selected = select_num(1)
+                selected = int(selected) if selected.isdigit() else selected
                 if selected == 'MODE':
                     end = True
                     break
@@ -197,6 +209,13 @@ def Tic_Tac_Toe():
         if check_winner(o_positions):
             draw_icon(oled, tic_tac_toe_grid, 64, 0, 0)
             oled.text('O Wins!', 65, 32)
+            oled.show()
+            time.sleep(2)
+            winner = True
+            
+        if len(x_positions) + len(o_positions) == 9:
+            draw_icon(oled, tic_tac_toe_grid, 64, 0, 0)
+            oled.text('Tie!', 65, 32)
             oled.show()
             time.sleep(2)
             winner = True
@@ -220,3 +239,5 @@ def game_select():
     
     if game == 'Tic Tac Toe':
         Tic_Tac_Toe()
+        
+Tic_Tac_Toe()
