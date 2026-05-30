@@ -52,4 +52,16 @@ def main():
                 append_output('No Wi-Fi', 0, 20)
                 time.sleep(1.5)
                 
+        if mode == 'whatsapp':
+            append_output('Whatsapp', 0, 0)
+            if wlan.isconnected():
+                send_whatsapp()
+            else:
+                append_output('Unavailable', 0, 10)
+                append_output('No WiFi', 0, 20)
+                time.sleep(1.5)
+                
+        if mode == 'games':
+            game_select()
+                
 main()
