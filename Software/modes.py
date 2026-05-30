@@ -6,6 +6,7 @@ from OLED import *
 from WiFi import *
 import urequests
 import socket
+from icons import *
 
 ''' Calculator '''
 def calculator(expression):
@@ -119,5 +120,103 @@ def send_whatsapp():
         print(response.text)
         response.close()
         clear_main()
-
-
+        
+def check_winner(positions):
+    wins = [
+    {1,2,3}, {4,5,6}, {7,8,9},  # rows
+    {1,4,7}, {2,5,8}, {3,6,9},  # cols
+    {1,5,9}, {3,5,7}             # diagonals
+    ]
+    return any(w.issubset(positions) for w in wins)
+        
+def Tic_Tac_Toe():
+    clear_all()
+    draw_icon(oled, tic_tac_toe_grid, 64, 0, 0)
+    oled.rect(65, 0, 64, 64, 0, fill=True)
+    oled.show()
+    pos7 = 0, 0
+    pos8 = 22, 0
+    pos9 = 44, 0
+    pos4 = 0, 22
+    pos5 = 22, 22
+    pos6 = 44, 22
+    pos1 = 0, 44
+    pos2 = 22, 44
+    pos3 = 44, 44
+    positions = [pos1, pos2, pos3, pos4, pos5, pos6, pos7, pos8, pos9]
+    o_positions = []
+    x_positions = []
+    selected = ''
+    winner = False
+    
+    while selected != 'MODE' and not winner:
+        # X's turn
+        selected = select_num(1)
+        if selected == 'MODE':
+            break
+        else:
+            end = False
+            while (not selected.isdigit() or selected in x_positions or selected in o_positions) and end == False:
+                selected = select_num(1)
+                if selected == 'MODE':
+                    end = True
+                    break
+        if selected == 'MODE':
+            break
+        position = positions[int(selected)-1]
+        x_positions.append(int(selected))
+        draw_icon(oled, x_icon, 21, position[0], position[1])
+        oled.show()
+        
+        print('x:', x_positions)
+        if check_winner(x_positions):
+            draw_icon(oled, tic_tac_toe_grid, 64, 0, 0)
+            oled.text('X Wins!', 65, 32)
+            oled.show()
+            time.sleep(2)
+            winner = True
+             
+        # O's turn
+        selected = select_num(1)
+        if selected == 'MODE':
+            break
+        else:
+            end = False
+            while (not selected.isdigit() or selected in x_positions or selected in o_positions) and end == False:
+                selected = select_num(1)
+                if selected == 'MODE':
+                    end = True
+                    break
+        if selected == 'MODE':
+            break
+        position = positions[int(selected)-1]
+        o_positions.append(int(selected))
+        draw_icon(oled, o_icon, 21, position[0], position[1])
+        oled.show()
+        
+        if check_winner(o_positions):
+            draw_icon(oled, tic_tac_toe_grid, 64, 0, 0)
+            oled.text('O Wins!', 65, 32)
+            oled.show()
+            time.sleep(2)
+            winner = True
+            
+            
+games = ['Tic Tac Toe', 'Pong', '67 game']
+def game_select():
+    clear_mode_line()
+    clear_main()
+    append_output('Games:', 0, 0)
+    for num, game in enumerate(games):
+        append_output(str(num+1)+':'+game, 0, 10+(num*10))
+    
+    selected = len(games)+1
+    while int(selected) >= len(games) or not str(selected).isdigit():
+        selected = select_num(1)
+        if selected == 'MODE':
+            return ''
+        
+    game = games[int(selected)-1]
+    
+    if game == 'Tic Tac Toe':
+        Tic_Tac_Toe()
