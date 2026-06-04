@@ -149,79 +149,76 @@ def Tic_Tac_Toe():
     selected = ''
     winner = False
     
-    while selected != 'MODE' and not winner:
+    while selected != 'MODE':
         # X's turn
-        selected = select_num(1)
-        selected = int(selected) if selected.isdigit() else selected
+        oled.rect(65, 0, 64, 64, 0, fill=True)
+        oled.text("X's Turn", 65, 32)
+        oled.show()
+        selected = select_num()
         if selected == 'MODE':
-            break
-        else:
-            end = False
-            while (not isinstance(selected, int)  or selected in x_positions or selected in o_positions) and end == False:
-                selected = select_num(1)
-                selected = int(selected) if selected.isdigit() else selected
-                if selected == 'MODE':
-                    end = True
-                    break
-        if selected == 'MODE':
-            break
-        position = positions[int(selected)-1]
-        x_positions.append(int(selected))
-        print('x', x_positions)
+            return ''
+        selected = int(selected)
+        while selected in x_positions or selected in o_positions or selected == 0:
+            selected = select_num()
+            if selected == 'MODE':
+                return ''
+            selected = int(selected)
+        
+        position = positions[selected-1]
+        x_positions.append(selected)
         draw_icon(oled, x_icon, 21, position[0], position[1])
         oled.show()
         
-        print('x:', x_positions)
+        # check if winner or tie
         if check_winner(x_positions):
-            draw_icon(oled, tic_tac_toe_grid, 64, 0, 0)
+            oled.rect(65, 0, 64, 64, 0, fill=True)
             oled.text('X Wins!', 65, 32)
             oled.show()
             time.sleep(2)
-            winner = True
+            return ''
             
         if len(x_positions) + len(o_positions) == 9:
-            draw_icon(oled, tic_tac_toe_grid, 64, 0, 0)
+            oled.rect(65, 0, 64, 64, 0, fill=True)
             oled.text('Tie!', 65, 32)
             oled.show()
             time.sleep(2)
-            winner = True
-             
+            return ''
+            
         # O's turn
-        selected = select_num(1)
-        selected = int(selected) if selected.isdigit() else selected
+        oled.rect(65, 0, 64, 64, 0, fill=True)
+        oled.text("O's Turn", 65, 32)
+        oled.show()
+        selected = select_num()
         if selected == 'MODE':
-            break
-        else:
-            end = False
-            while (not isinstance(selected, int)  or selected in x_positions or selected in o_positions) and end == False:
-                selected = select_num(1)
-                selected = int(selected) if selected.isdigit() else selected
-                if selected == 'MODE':
-                    end = True
-                    break
-        if selected == 'MODE':
-            break
-        position = positions[int(selected)-1]
-        o_positions.append(int(selected))
+            return ''
+        selected = int(selected)
+        while selected in x_positions or selected in o_positions or selected == 0:
+            selected = select_num()
+            if selected == 'MODE':
+                return ''
+            selected = int(selected)
+        
+        position = positions[selected-1]
+        o_positions.append(selected)
         draw_icon(oled, o_icon, 21, position[0], position[1])
         oled.show()
         
+        # check if winner or tie
         if check_winner(o_positions):
-            draw_icon(oled, tic_tac_toe_grid, 64, 0, 0)
+            oled.rect(65, 0, 64, 64, 0, fill=True)
             oled.text('O Wins!', 65, 32)
             oled.show()
             time.sleep(2)
-            winner = True
+            return ''
             
         if len(x_positions) + len(o_positions) == 9:
-            draw_icon(oled, tic_tac_toe_grid, 64, 0, 0)
+            oled.rect(65, 0, 64, 64, 0, fill=True)
             oled.text('Tie!', 65, 32)
             oled.show()
             time.sleep(2)
-            winner = True
+            return ''      
             
-            
-games = ['Tic Tac Toe', 'Pong', '67 game']
+games = ['Tic Tac Toe', 'Pong']
 def game_select():
     clear_mode_line()
     clear_main()
@@ -231,7 +228,7 @@ def game_select():
     
     selected = len(games)+1
     while int(selected) >= len(games) or not str(selected).isdigit():
-        selected = select_num(1)
+        selected = select_num()
         if selected == 'MODE':
             return ''
         
@@ -239,5 +236,4 @@ def game_select():
     
     if game == 'Tic Tac Toe':
         Tic_Tac_Toe()
-        
-Tic_Tac_Toe()
+        game_select()
