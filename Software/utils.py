@@ -24,6 +24,7 @@ def power_off():
 def main_menu():
     y = 0
     clear_all()
+    modes = ['calc mode', 'notepad mode', 'sms mode', 'whatsapp', 'games']
     calc_select = 0, 5
     notepad_select = 1, 5
     sms_select = 2, 5
@@ -45,27 +46,18 @@ def main_menu():
         oled.show()
         
         X, Y = listen()
+        button = menu_array[Y][X]
+        print(button)
         
-        if X == calc_select[0] and Y == calc_select[1]:
-            clear_main()
-            return 'calc mode'
-        elif X == notepad_select[0] and Y == notepad_select[1]:
-            clear_main()
-            return 'notepad mode'
-        elif X == sms_select[0] and Y == sms_select[1]:
-            clear_main()
-            return 'sms mode'
-        elif X == wifi_select[0] and Y == wifi_select[1]:
-            wifi()
-        elif X == whatsapp_select[0] and Y == whatsapp_select[1]:
-            return 'whatsapp'
-        elif X == games_select[0] and Y == games_select[1]:
-            return 'games'
-        
-        elif X == 4 and Y == 1:
+        if button.isdigit():
+            selected = int(button)
+            if selected <= len(modes) and selected > 0:
+                return modes[int(button)-1]
+
+        elif button == 'DOWN':
             clear_main()
             y += 15
             
-        elif X == 5 and Y == 1:
+        elif button == 'UP':
             clear_main()
             y -= 15
