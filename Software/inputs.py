@@ -25,8 +25,16 @@ columns = [C1, C2, C3, C4, C5, C6]
 
 FUNCTIONS = ['POWER', 'ANS', 'DEL', 'AC', 'MODE', 'EXE', 'SHIFT', 'WiFi', 'LEFT', 'RIGHT', 'UP', 'DOWN']
 
+menu_array = [['POWER', 'SHIFT', 'WiFi', 'WiFi', 'LEFT', 'RIGHT'],
+                  ['UP', 'UP', 'UP', 'UP', 'UP', 'DOWN'],
+                  ['DOWN', 'DOWN', 'DOWN', '#', '(', ')'],
+                  ['7', '8', '9', 'DEL', 'AC'],
+                  ['4', '5', '6', 'x', '/'],
+                  ['1', '2', '3', '+', '-'],
+                  ['0', '.', '0', 'MODE', 'EXE']]
+
 calculator_array = [['POWER', 'SHIFT', 'WiFi', 'WiFi', 'LEFT', 'RIGHT'],
-                  ['#', '/', '#', '^', 'UP', 'DOWN'],
+                  ['UP', '/', '#', '^', 'UP', 'DOWN'],
                   ['ANS', 'sin(', 'cos(', 'tan(', '(', ')'],
                   ['7', '8', '9', 'DEL', 'AC'],
                   ['4', '5', '6', 'x', '/'],
@@ -128,11 +136,10 @@ def get_expression(array, shift_array, ANS, line):
         oled.show()
         append_output(''.join(expression), X, line)
         
-def select_num(max_length):
+def select_num():
     expression = []
-    for i in range(max_length):
+    num = 'a'
+    while not num.isdigit() and num != 'MODE':
         x, y = listen()
-        expression.append(calculator_array[y][x])
-    expression = ''.join(expression)
-    
-    return expression
+        num = calculator_array[y][x]
+    return num
