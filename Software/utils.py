@@ -24,14 +24,7 @@ def power_off():
 def main_menu():
     y = 0
     clear_all()
-    modes = ['calc mode', 'notepad mode', 'sms mode', 'whatsapp', 'games']
-    calc_select = 0, 5
-    notepad_select = 1, 5
-    sms_select = 2, 5
-    sms_select = 3, 5
-    wifi_select = 0, 4
-    whatsapp_select = 1, 4
-    games_select = 2, 4
+    modes = ['calc mode', 'notepad mode', 'sms mode', 'WiFi', 'whatsapp', 'games']
     while True:
         clear_main()
         oled.rect(0, 0, 128, 10, 0, fill=True)
@@ -56,8 +49,8 @@ def main_menu():
 
         elif button == 'DOWN':
             clear_main()
-            y += 15
+            y -= 15
             
         elif button == 'UP':
             clear_main()
-            y -= 15
+            y += 15
