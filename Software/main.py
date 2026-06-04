@@ -39,6 +39,9 @@ def main():
             append_output('Notepad', 0, 0)
             note_pad(expression)
             
+        if mode == 'WiFi':
+            wifi()
+            
         if mode == 'sms mode':
             append_output('SMS Mode', 0, 0)
             if ap.active() or wlan.isconnected():
