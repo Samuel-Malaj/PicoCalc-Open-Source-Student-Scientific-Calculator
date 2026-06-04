@@ -18,15 +18,11 @@ while True:
         LED.toggle()
         time.sleep(0.5)
         LED.toggle()
-# --- 1. SETUP ---
-# Safety: If GP1 is connected to GND, don't sleep!
 
 ##############################################################################
 #print('Switching off')
 #power_off()
 
-        
- 
 ''' Main '''
 def main():
     while True:
