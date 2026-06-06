@@ -24,7 +24,7 @@ def power_off():
 def main_menu():
     y = 0
     clear_all()
-    modes = ['calc mode', 'notepad mode', 'sms mode', 'WiFi', 'whatsapp', 'games']
+    modes = ['calc mode', 'notepad mode', 'sms mode', 'WiFi', 'whatsapp', 'games', 'weather']
     while True:
         clear_main()
         oled.rect(0, 0, 128, 10, 0, fill=True)
@@ -36,6 +36,7 @@ def main_menu():
         oled.blit(wifi_icon, 63, 38+y)
         oled.blit(whatsapp_icon, 0, 66+y)
         oled.blit(games_icon, 63, 66+y)
+        oled.blit(weather_icon, 0, 94+y)
         oled.show()
         
         X, Y = listen()
