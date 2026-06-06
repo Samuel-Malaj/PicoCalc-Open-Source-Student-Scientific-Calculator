@@ -7,6 +7,7 @@ from WiFi import *
 import urequests
 import socket
 from icons import *
+import ujson
 
 ''' Calculator '''
 def calculator(expression):
@@ -237,3 +238,60 @@ def game_select():
     if game == 'Tic Tac Toe':
         Tic_Tac_Toe()
         game_select()
+        
+
+weather_icon_map = {
+    113: sunny,
+    116: partly_cloudy,
+    119: cloudy, 122: cloudy, 248: cloudy, 260: cloudy,
+    176: rainy, 182: rainy, 185: rainy, 200: rainy, 263: rainy, 266: rainy, 281: rainy, 284: rainy, 293: rainy, 296: rainy, 299: rainy, 302: rainy, 305: rainy, 308: rainy, 311: rainy, 314: rainy, 317: rainy, 320: rainy, 353: rainy, 356: rainy, 359: rainy, 362: rainy, 365: rainy, 374: rainy, 377: rainy, 386: rainy
+}
+
+def auto_detect_location():
+    response = urequests.get("http://ip-api.com/json/")
+    data = response.json()
+    return data['city'], data['country'], data['lat'], data['lon']
+
+def get_weather(location):
+    LOCATION = location
+    URL = f"https://wttr.in/{LOCATION}?format=j1"
+    response = urequests.get(URL)
+    data = ujson.loads(response.content)
+    response.close()
+
+    current = data['current_condition'][0]
+    print(current)
+    wwo_code = current["weatherCode"]
+    temp = current["temp_C"]
+    feels_like = current["FeelsLikeC"]
+    print(feels_like, temp, wwo_code, current)
+
+    conditions_icon = weather_icon_map[int(wwo_code)]
+    draw_icon(oled, conditions_icon, 32, 0, 0)
+    oled.text(location, 33, 0)
+    oled.text('Temp:'+ temp + "'C", 33, 10)
+    oled.text('like:'+ feels_like + "'C", 33, 20)
+    oled.show()
+
+def wtth():
+    clear_main()
+    append_output('1:Enter Location', 0, 10)
+    append_output('2:Autodetect', 0, 20)
+    selected = select_num()
+    if selected == 'MODE':
+        return ''
+    while selected != '1' and selected != '2':
+         selected = select_num()
+    
+    clear_main()
+    if selected == '1':
+        append_output('Enter location:', 0, 10)
+        function, expression = get_expression(character_array, shift_character_array, 0, line=20)
+        city = ''.join(expression)
+        
+    elif selected == '2':
+        append_output('Detecting...', 0, 10)
+        city = auto_detect_location()[0]
+        
+    get_weather(city)
+
