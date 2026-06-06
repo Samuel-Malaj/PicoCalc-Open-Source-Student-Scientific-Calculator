@@ -1,5 +1,7 @@
+import gc
+print('RAM:',gc.mem_free())
 from machine import Pin
-import time
+import utime as time
 import network
 import errno
 from icons import *
@@ -26,10 +28,12 @@ while True:
 ''' Main '''
 def main():
     while True:
+        print('RAM:',gc.mem_free())
         mode = main_menu()
         indicate_wifi()
         clear_mode_line()
         clear_main()
+        print('RAM:',gc.mem_free())
         
         if mode == 'calc mode':
             append_output('Calc Mode', 0, 0)
@@ -62,5 +66,9 @@ def main():
                 
         if mode == 'games':
             game_select()
+            
+        if mode == 'weather':
+            print('RAM:',gc.mem_free())
+            wtth()
                 
 main()
