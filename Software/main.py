@@ -1,5 +1,4 @@
 import gc
-print('RAM:',gc.mem_free())
 from machine import Pin
 import utime as time
 import network
@@ -38,7 +37,7 @@ def main():
         if mode == 'calc mode':
             append_output('Calc Mode', 0, 0)
             calculator(expression)
-            
+
         if mode == 'notepad mode':
             append_output('Notepad', 0, 0)
             note_pad(expression)
@@ -69,6 +68,6 @@ def main():
             
         if mode == 'weather':
             print('RAM:',gc.mem_free())
-            wtth()
+            weather()
                 
 main()
