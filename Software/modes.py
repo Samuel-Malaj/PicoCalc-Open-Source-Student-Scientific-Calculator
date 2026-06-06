@@ -1,16 +1,29 @@
 import uasyncio as asyncio
-from Calculate import calculate
 from inputs import *
-import time
+import utime as time
 from OLED import *
-from WiFi import *
-import urequests
 import socket
 from icons import *
 import ujson
+import gc
+import sys
 
+def unload(module_name):
+    if module_name in sys.modules:
+        del sys.modules[module_name]
+    gc.collect()
+    
+def unload_var(variable):
+    before = gc.mem_free()
+    del variable
+    gc.collect()
+    after = gc.mem_free()
+    print("Freed:", after - before, "bytes")
+    
 ''' Calculator '''
 def calculator(expression):
+    from Calculate import calculate
+    print('RAM:',gc.mem_free())
     ANS = '0'
     clear_main()
     while True:
@@ -22,10 +35,11 @@ def calculator(expression):
             print(answer)
             clear_main()
             append_output(answer, 0, 54)
-        if function == 'WiFi':
-            wifi()
         if function == 'MODE':
+            unload('Calculate')
+            print('RAM:',gc.mem_free())
             return ''
+            
 
 ''' Characters '''        
 def note_pad(expression):
@@ -44,9 +58,7 @@ def note_pad(expression):
                 file.close()
             clear_main()
             append_output('Saved Note', 0, 10)
-    
-        if function == 'WiFi':
-            wifi()
+
         if function == 'MODE':
             return ''
 
@@ -244,41 +256,110 @@ weather_icon_map = {
     113: sunny,
     116: partly_cloudy,
     119: cloudy, 122: cloudy, 248: cloudy, 260: cloudy,
-    176: rainy, 182: rainy, 185: rainy, 200: rainy, 263: rainy, 266: rainy, 281: rainy, 284: rainy, 293: rainy, 296: rainy, 299: rainy, 302: rainy, 305: rainy, 308: rainy, 311: rainy, 314: rainy, 317: rainy, 320: rainy, 353: rainy, 356: rainy, 359: rainy, 362: rainy, 365: rainy, 374: rainy, 377: rainy, 386: rainy
+    176: rainy, 182: rainy, 185: rainy, 200: rainy, 263: rainy, 266: rainy, 281: rainy, 284: rainy, 293: rainy, 296: rainy, 299: rainy, 302: rainy, 305: rainy, 308: rainy, 311: rainy, 314: rainy, 317: rainy, 320: rainy, 353: rainy, 356: rainy, 359: rainy, 362: rainy, 365: rainy, 374: rainy, 377: rainy, 386: rainy, 179:rainy
+}
+
+CONDITION_TO_CODE = {
+    "sunny": 113,
+    "clear": 113,
+    "partly cloudy": 116,
+    "cloudy": 119,
+    "overcast": 122,
+    "mist": 143,
+    "fog": 248,
+    "freezing fog": 260,
+    "patchy rain possible": 176,
+    "patchy light drizzle": 263,
+    "light drizzle": 266,
+    "freezing drizzle": 281,
+    "heavy freezing drizzle": 284,
+    "patchy light rain": 293,
+    "light rain": 296,
+    "moderate rain at times": 299,
+    "moderate rain": 302,
+    "heavy rain at times": 305,
+    "heavy rain": 308,
+    "light freezing rain": 311,
+    "moderate or heavy freezing rain": 314,
+    "light sleet": 317,
+    "moderate or heavy sleet": 320,
+    "patchy light snow": 323,
+    "light snow": 326,
+    "patchy moderate snow": 329,
+    "moderate snow": 332,
+    "patchy heavy snow": 335,
+    "heavy snow": 338,
+    "ice pellets": 350,
+    "light rain shower": 353,
+    "moderate or heavy rain shower": 356,
+    "torrential rain shower": 359,
+    "light sleet showers": 362,
+    "moderate or heavy sleet showers": 365,
+    "light snow showers": 368,
+    "moderate or heavy snow showers": 371,
+    "light showers of ice pellets": 374,
+    "moderate or heavy showers of ice pellets": 377,
+    "patchy light rain with thunder": 386,
+    "moderate or heavy rain with thunder": 389,
+    "patchy light snow with thunder": 392,
+    "moderate or heavy snow with thunder": 395,
+    "blowing snow": 227,
+    "blizzard": 230,
+    "thundery outbreaks possible": 200,
+    "patchy snow possible": 179,
+    "patchy sleet possible": 182,
+    "patchy freezing drizzle possible": 185,
+    "patchy rain nearby": 176,
+    "patchy snow nearby": 179,
+    "patchy sleet nearby": 182,
+    "patchy freezing drizzle nearby": 185,
+    "thundery outbreaks nearby": 200,
 }
 
 def auto_detect_location():
+    import urequests, json
     response = urequests.get("http://ip-api.com/json/")
     data = response.json()
-    return data['city'], data['country'], data['lat'], data['lon']
+    response.close()
+    unload_var(data)
+    unload('json')
+    return data['city']
 
 def get_weather(location):
+    import urequests
+    
+    print('RAM:',gc.mem_free())
     LOCATION = location
-    URL = f"https://wttr.in/{LOCATION}?format=j1"
+    URL = f"https://wttr.in/{LOCATION}?format=%t|%f|%M|%C"
+    
     response = urequests.get(URL)
-    data = ujson.loads(response.content)
+    data = response.text.replace('°','').lower().split('|')
     response.close()
+    unload_var(response)
 
-    current = data['current_condition'][0]
-    print(current)
-    wwo_code = current["weatherCode"]
-    temp = current["temp_C"]
-    feels_like = current["FeelsLikeC"]
-    print(feels_like, temp, wwo_code, current)
+    print(data)
+    condition = data[3].split(',')[0]
+    temp = data[0]
+    feels_like = data[1]
+    moon = data[2]
+    print(feels_like, temp, condition, moon)
+    print(condition)
 
-    conditions_icon = weather_icon_map[int(wwo_code)]
+    conditions_icon = weather_icon_map[CONDITION_TO_CODE[condition]]
     draw_icon(oled, conditions_icon, 32, 0, 0)
     oled.text(location, 33, 0)
     oled.text('Temp:'+ temp + "'C", 33, 10)
     oled.text('like:'+ feels_like + "'C", 33, 20)
     oled.show()
 
-def wtth():
+def weather():
+    import urequests
     clear_main()
     append_output('1:Enter Location', 0, 10)
     append_output('2:Autodetect', 0, 20)
     selected = select_num()
     if selected == 'MODE':
+        unload('urequests')
         return ''
     while selected != '1' and selected != '2':
          selected = select_num()
@@ -288,10 +369,13 @@ def wtth():
         append_output('Enter location:', 0, 10)
         function, expression = get_expression(character_array, shift_character_array, 0, line=20)
         city = ''.join(expression)
-        
     elif selected == '2':
         append_output('Detecting...', 0, 10)
-        city = auto_detect_location()[0]
+        city = auto_detect_location()
         
     get_weather(city)
-
+    unload('urequests')
+    while True:
+        selected = select_num()
+        if selected == 'MODE':
+            return ''
